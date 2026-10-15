@@ -17,7 +17,10 @@ jobs:
           shellcheck -S warning lib/es-python-ci.sh
       - name: actionlint
         run: |
-          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          # A fixed release, checked against its published SHA-256 before it runs.
+          curl -fsSLo actionlint.tgz https://github.com/rhysd/actionlint/releases/download/v1.7.7/actionlint_1.7.7_linux_amd64.tar.gz
+          echo "023070a287cd8cccd71515fedc843f1985bf96c436b7effaecce67290e7e0757  actionlint.tgz" | sha256sum -c -
+          tar xzf actionlint.tgz actionlint
           ./actionlint -color
 
   # The action must refuse cleanly, with a message, when no key is passed:
