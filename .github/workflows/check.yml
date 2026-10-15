@@ -1,0 +1,41 @@
+name: check
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+
+jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: shellcheck
+        run: |
+          shellcheck lib/main.sh
+          # The CI driver is kept identical to the copy EyalSec serves at /ci.sh.
+          shellcheck -S warning lib/es-python-ci.sh
+      - name: actionlint
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/v1.7.7/scripts/download-actionlint.bash) 1.7.7
+          ./actionlint -color
+
+  # The action must refuse cleanly, with a message, when no key is passed:
+  # that is what a pull request from a fork sees.
+  no-key:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - id: es
+        continue-on-error: true
+        uses: ./
+        with:
+          api-key: ""
+          run: es-python -m pytest
+      - name: expect a clean refusal
+        env:
+          OUTCOME: ${{ steps.es.outcome }}
+          RESULT: ${{ steps.es.outputs.result }}
+        run: |
+          echo "outcome=$OUTCOME result=$RESULT"
+          [ "$OUTCOME" = failure ] && [ "$RESULT" = error ]

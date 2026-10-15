@@ -1,0 +1,112 @@
+name: EyalSec es-python
+description: >-
+  Run your tests, or any command, under es-python, then summarise the
+  injection flows that run reported and fail the job at the severity you choose.
+author: EyalSec
+branding:
+  icon: shield
+  color: yellow
+
+inputs:
+  api-key:
+    description: >-
+      Your EyalSec API key, from Settings > API access on your dashboard. Use a
+      full-access key, because installing is a write. Pass it from a repository
+      secret, for example secrets.EYALSEC_API_KEY. Never write it into a workflow file.
+    required: true
+  run:
+    description: >-
+      The command to run under es-python, as you would type it in bash. Use
+      es-python where you would type python, for example "es-python -m pytest".
+      Several lines run as one bash script.
+    required: true
+  machine:
+    description: >-
+      The EyalSec machine this pipeline reports under, created on the first run.
+      Give each concurrent job and each matrix leg its own name.
+    required: false
+    default: ""
+  url:
+    description: Your EyalSec address.
+    required: false
+    default: https://eyalsec.com
+  python-version:
+    description: >-
+      The Python version (3.9 to 3.14), used when the machine is created. Empty
+      means the version of python3 on the runner's PATH, so run
+      actions/setup-python first if you use it.
+    required: false
+    default: ""
+  distro:
+    description: >-
+      The runner's operating system as EyalSec names it, such as ubuntu_24_04.
+      Empty means read it from the runner.
+    required: false
+    default: ""
+  arch:
+    description: x86_64 or aarch64. Empty means read it from the runner.
+    required: false
+    default: ""
+  fail-on:
+    description: >-
+      Fail the job when the run reported findings at or above this severity:
+      critical, high, medium, low, info, or never to report without failing.
+    required: false
+    default: high
+  new-only:
+    description: Fail only on findings no earlier run of this machine had reached.
+    required: false
+    default: "false"
+  sources:
+    description: >-
+      The taint sources to switch on, comma-separated: socket, file, stdin, env,
+      foreign, weak_random, hardcoded, db_rows, everything. "dashboard" switches
+      none on and uses the machine's Configure settings only.
+    required: false
+    default: socket,file
+  wait:
+    description: Seconds to wait for the run's events to arrive before checking.
+    required: false
+    default: "10"
+  working-directory:
+    description: The directory the command runs in.
+    required: false
+    default: .
+
+outputs:
+  total:
+    description: Every event the run reached, at any severity.
+    value: ${{ steps.es-python.outputs.total }}
+  findings:
+    description: Events at or above fail-on (at or above info when fail-on is never).
+    value: ${{ steps.es-python.outputs.findings }}
+  new-findings:
+    description: Of those findings, the ones no earlier run had reached.
+    value: ${{ steps.es-python.outputs.new-findings }}
+  result:
+    description: pass, fail (findings at the threshold), error (the action could not do its job) or command-failed.
+    value: ${{ steps.es-python.outputs.result }}
+  events-url:
+    description: The dashboard's events list for this machine.
+    value: ${{ steps.es-python.outputs.events-url }}
+
+runs:
+  using: composite
+  steps:
+    - id: es-python
+      shell: bash
+      working-directory: ${{ inputs.working-directory }}
+      env:
+        EYALSEC_API_KEY: ${{ inputs.api-key }}
+        INPUT_RUN: ${{ inputs.run }}
+        INPUT_MACHINE: ${{ inputs.machine }}
+        INPUT_URL: ${{ inputs.url }}
+        INPUT_PYTHON_VERSION: ${{ inputs.python-version }}
+        INPUT_DISTRO: ${{ inputs.distro }}
+        INPUT_ARCH: ${{ inputs.arch }}
+        INPUT_FAIL_ON: ${{ inputs.fail-on }}
+        INPUT_NEW_ONLY: ${{ inputs.new-only }}
+        INPUT_SOURCES: ${{ inputs.sources }}
+        INPUT_WAIT: ${{ inputs.wait }}
+        REPO_NAME: ${{ github.event.repository.name }}
+      run: bash "$GITHUB_ACTION_PATH/lib/main.sh"

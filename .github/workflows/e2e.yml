@@ -1,0 +1,64 @@
+# End to end: install es-python, run a deliberately vulnerable test under it,
+# and check that the run's event comes back. Started by hand, because it needs
+# the EYALSEC_API_KEY secret, which pull requests from forks never receive.
+name: e2e
+on:
+  workflow_dispatch:
+    inputs:
+      runner:
+        description: Runner label to run on
+        default: ubuntu-24.04
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ${{ inputs.runner }}
+    concurrency:
+      group: es-python-e2e
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: python -m pip install pytest
+
+      - name: Report only
+        id: report
+        uses: ./
+        with:
+          api-key: ${{ secrets.EYALSEC_API_KEY }}
+          url: ${{ vars.EYALSEC_URL || 'https://eyalsec.com' }}
+          machine: ci-es-python-action-e2e
+          fail-on: never
+          working-directory: example
+          run: es-python -m pytest -q -p no:cacheprovider
+
+      - name: Expect the injected command to be reported
+        env:
+          TOTAL: ${{ steps.report.outputs.total }}
+          RESULT: ${{ steps.report.outputs.result }}
+        run: |
+          echo "result=$RESULT total=$TOTAL"
+          [ "$RESULT" = pass ] && [ "${TOTAL:-0}" -ge 1 ]
+
+      - name: Gate
+        id: gate
+        continue-on-error: true
+        uses: ./
+        with:
+          api-key: ${{ secrets.EYALSEC_API_KEY }}
+          url: ${{ vars.EYALSEC_URL || 'https://eyalsec.com' }}
+          machine: ci-es-python-action-e2e
+          working-directory: example
+          run: es-python -m pytest -q -p no:cacheprovider
+
+      - name: Expect the default threshold (high) to fail the step on that finding
+        env:
+          OUTCOME: ${{ steps.gate.outcome }}
+          RESULT: ${{ steps.gate.outputs.result }}
+          FINDINGS: ${{ steps.gate.outputs.findings }}
+        run: |
+          echo "outcome=$OUTCOME result=$RESULT findings=$FINDINGS"
+          [ "$OUTCOME" = failure ] && [ "$RESULT" = fail ] && [ "${FINDINGS:-0}" -ge 1 ]
