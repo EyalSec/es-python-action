@@ -4,6 +4,7 @@
 
 [![Website](https://img.shields.io/badge/website-eyalsec.com-e8b04b)](https://eyalsec.com)
 [![Docs](https://img.shields.io/badge/docs-run%20in%20CI-2a2c27)](https://eyalsec.com/docs/ci)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/EyalSec/es-python-action/badge)](https://scorecard.dev/viewer/?uri=github.com/EyalSec/es-python-action)
 
 Your tests already drive your code through its real paths. With this action
 they also tell you when untrusted data on one of those paths reached a SQL
