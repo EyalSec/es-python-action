@@ -62,13 +62,13 @@ shell command:
 >
 > | Reported by this run | Critical | High | Medium | Low | Info |
 > |---:|---:|---:|---:|---:|---:|
-> | 10 | 3 | 0 | 0 | 0 | 7 |
+> | 7 | 3 | 0 | 0 | 0 | 4 |
 >
 > | Severity | | Operation | Event | Occurrences, all runs |
 > |---|---|---|---:|---:|
-> | critical | new | `subprocess exec` | 22517588 | 1 |
-> | critical | new | `subprocess shell` | 22517587 | 1 |
-> | critical | new | `shell injection` | 22517546 | 1 |
+> | critical | new | `subprocess shell` | 22518624 | 1 |
+> | critical | new | `shell injection` | 22518612 | 1 |
+> | critical | new | `os spawn` | 22518599 | 1 |
 
 **new** means no earlier run had reached that finding; **seen** means one
 had. The value that reached the operation is never printed in the log or the
